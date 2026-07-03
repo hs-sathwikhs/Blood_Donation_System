@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Blood Donation System — Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; }
+        .hero { background: linear-gradient(135deg, #d32f2f, #b71c1c); color: white; padding: 100px 0; text-align: center; }
+        .card { transition: transform 0.3s; cursor: pointer; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <div class="hero mb-5">
+        <div class="container">
+            <h1 class="display-4 fw-bold mb-3">Save a Life, Give Blood.</h1>
+            <p class="lead mb-4">Connect donors, camps, and hospitals in real-time.</p>
+        </div>
+    </div>
+
+    <div class="container pb-5">
+        <h2 class="text-center mb-5">Select Your Portal</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4">
+
+            <!-- Organiser -->
+            <div class="col">
+                <div class="card h-100 border-0 shadow-sm" data-bs-toggle="modal" data-bs-target="#loginModal" onclick="setRole('Organiser', '/organiser', '/api/auth/login/organiser')">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-calendar-check text-danger display-4 mb-3 d-block"></i>
+                        <h4 class="card-title">Camp Organiser</h4>
+                        <p class="card-text text-muted">Manage blood donation camps and track registrations.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Donor -->
+            <div class="col">
+                <div class="card h-100 border-0 shadow-sm" data-bs-toggle="modal" data-bs-target="#loginModal" onclick="setRole('Donor', '/donor', '/api/auth/login/donor')">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-droplet-fill text-danger display-4 mb-3 d-block"></i>
+                        <h4 class="card-title">Blood Donor</h4>
+                        <p class="card-text text-muted">Register for camps, check eligibility, view history.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hospital -->
+            <div class="col">
+                <div class="card h-100 border-0 shadow-sm" data-bs-toggle="modal" data-bs-target="#loginModal" onclick="setRole('Hospital', '/hospital', '/api/auth/login/hospital')">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-hospital text-danger display-4 mb-3 d-block"></i>
+                        <h4 class="card-title">Hospital</h4>
+                        <p class="card-text text-muted">Request blood units with severity-based priority.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory Manager (Admin) -->
+            <div class="col">
+                <div class="card h-100 border-0 shadow-sm" data-bs-toggle="modal" data-bs-target="#loginModal" onclick="setRole('Inventory Manager', '/inventory', '/api/auth/login/admin')">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-bar-chart-line text-danger display-4 mb-3 d-block"></i>
+                        <h4 class="card-title">Inventory Manager</h4>
+                        <p class="card-text text-muted">Monitor stock levels, handle alerts, fulfill requests.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Login / Register Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="loginModalLabel"><span id="roleName"></span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Tab navigation -->
+                    <ul class="nav nav-tabs mb-3" id="authTabs">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#loginTab">Login</a>
+                        </li>
+                        <li class="nav-item" id="registerTabItem">
+                            <a class="nav-link" data-bs-toggle="tab" href="#registerTab">Register</a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <!-- LOGIN TAB -->
+                        <div class="tab-pane fade show active" id="loginTab">
+                            <form id="loginForm" onsubmit="handleLogin(event)">
+                                <div class="mb-3">
+                                    <label class="form-label">Email address</label>
+                                    <input type="email" id="loginEmail" class="form-control" placeholder="user@example.com" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label">Password</label>
+                                    <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+                                </div>
+                                <button type="submit" class="btn btn-danger w-100">Sign In</button>
+                            </form>
+                        </div>
+
+                        <!-- REGISTER TAB -->
+                        <div class="tab-pane fade" id="registerTab">
+                            <form id="registerForm" onsubmit="handleRegister(event)">
+                                <div class="mb-2">
+                                    <label class="form-label">Full Name</label>
+                                    <input type="text" id="regName" class="form-control" required>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" id="regEmail" class="form-control" required>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label">Password</label>
+                                    <input type="password" id="regPassword" class="form-control" required>
+                                </div>
+                                <!-- Donor-specific fields -->
+                                <div id="donorFields" style="display:none;">
+                                    <div class="row mb-2">
+                                        <div class="col">
+                                            <label class="form-label">Age</label>
+                                            <input type="number" id="regAge" class="form-control" min="18" max="65" value="25">
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label">Blood Type</label>
+                                            <select class="form-select" id="regBloodType">
+                                                <option value="A+">A+</option><option value="A-">A-</option>
+                                                <option value="B+">B+</option><option value="B-">B-</option>
+                                                <option value="O+">O+</option><option value="O-">O-</option>
+                                                <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Hospital-specific fields -->
+                                <div id="hospitalFields" style="display:none;">
+                                    <div class="mb-2">
+                                        <label class="form-label">Hospital Location</label>
+                                        <input type="text" id="regLocation" class="form-control">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label">Registration No.</label>
+                                        <input type="text" id="regRegNo" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label">Contact</label>
+                                    <input type="text" id="regContact" class="form-control">
+                                </div>
+                                <button type="submit" class="btn btn-danger w-100 mt-2">Create Account</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let redirectUrl = '/';
+        let currentRole = '';
+        let loginEndpoint = '';
+
+        function setRole(role, url, endpoint) {
+            document.getElementById('roleName').innerText = role;
+            redirectUrl = url;
+            currentRole = role;
+            loginEndpoint = endpoint;
+
+            // Show/hide register tab (no self-registration for Inventory Manager)
+            const regTabItem = document.getElementById('registerTabItem');
+            regTabItem.style.display = (role === 'Inventory Manager') ? 'none' : '';
+
+            // Show/hide role-specific registration fields
+            document.getElementById('donorFields').style.display = (role === 'Donor') ? '' : 'none';
+            document.getElementById('hospitalFields').style.display = (role === 'Hospital') ? '' : 'none';
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const pswd = document.getElementById('loginPassword').value;
+
+            fetch(loginEndpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, password: pswd })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Invalid credentials');
+                return res.json();
+            })
+            .then(data => {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('userId', data.id);
+                localStorage.setItem('userName', data.name);
+                localStorage.setItem('role', currentRole);
+                window.location.href = redirectUrl;
+            })
+            .catch(err => alert(err.message));
+        }
+
+        function handleRegister(event) {
+            event.preventDefault();
+            let endpoint = '';
+            let payload = {
+                name: document.getElementById('regName').value,
+                email: document.getElementById('regEmail').value,
+                password: document.getElementById('regPassword').value,
+                contact: document.getElementById('regContact').value
+            };
+
+            if (currentRole === 'Donor') {
+                endpoint = '/api/auth/register/donor';
+                payload.age = document.getElementById('regAge').value;
+                payload.bloodType = document.getElementById('regBloodType').value;
+            } else if (currentRole === 'Hospital') {
+                endpoint = '/api/auth/register/hospital';
+                payload.location = document.getElementById('regLocation').value;
+                payload.registrationNo = document.getElementById('regRegNo').value;
+            } else if (currentRole === 'Organiser') {
+                endpoint = '/api/auth/register/organiser';
+            }
+
+            fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (!res.ok) return res.json().then(e => { throw new Error(e.message); });
+                return res.json();
+            })
+            .then(data => {
+                alert(data.message + ' Please login now.');
+                // Switch to login tab
+                new bootstrap.Tab(document.querySelector('#authTabs a[href="#loginTab"]')).show();
+            })
+            .catch(err => alert(err.message));
+        }
+    </script>
+</body>
+</html>
