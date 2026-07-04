@@ -28,7 +28,7 @@ public class DonatorService {
     @Autowired
     private InventoryService inventoryService;
 
-    // EligibilityCriteria from class diagram — encapsulates validation rules
+    // EligibilityCriteria from class diagram - encapsulates validation rules
     private final EligibilityCriteria eligibilityCriteria = new EligibilityCriteria();
 
     public Donator registerDonator(Donator donator) {

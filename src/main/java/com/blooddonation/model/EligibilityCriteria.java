@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
 /**
- * EligibilityCriteria — validates donor eligibility based on configurable rules.
+ * EligibilityCriteria - validates donor eligibility based on configurable rules.
  * From Class Diagram: minAge, maxAge, minDaysSinceLastDonation, validateDonor()
  */
 public class EligibilityCriteria {

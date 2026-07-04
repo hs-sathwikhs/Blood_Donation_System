@@ -6,12 +6,14 @@ import com.blooddonation.repository.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
 @Configuration
+@Profile("demo")
 public class DatabaseConfig {
 
     @Bean
@@ -96,7 +98,7 @@ public class DatabaseConfig {
             }
 
             // ─────────────────────────────────────────
-            //  HOSPITALS (5 — across Indian cities)
+            //  HOSPITALS (5 - across Indian cities)
             // ─────────────────────────────────────────
             Hospital h1 = null, h2 = null, h3 = null, h4 = null, h5 = null;
             if (hospitalRepo.count() == 0) {
@@ -134,7 +136,7 @@ public class DatabaseConfig {
             }
 
             // ─────────────────────────────────────────
-            //  CAMPS (6 — various states)
+            //  CAMPS (6 - various states)
             // ─────────────────────────────────────────
             Camp c1 = null, c2 = null, c3 = null;
             if (campRepository.count() == 0) {
@@ -237,42 +239,42 @@ public class DatabaseConfig {
             //  BLOOD REQUESTS (varied hospitals, types, severities, statuses)
             // ─────────────────────────────────────────
             if (bloodRequestRepository.count() == 0) {
-                // Manipal Bengaluru — Critical O-
+                // Manipal Bengaluru - Critical O-
                 BloodRequest req1 = BloodRequestFactory.createRequest(h1, "O-", 3.0, "Critical");
                 req1.setStatus("Pending"); req1.setRequestDate(LocalDate.now());
                 bloodRequestRepository.save(req1);
 
-                // Apollo Hyderabad — Urgent A+
+                // Apollo Hyderabad - Urgent A+
                 BloodRequest req2 = BloodRequestFactory.createRequest(h2, "A+", 8.0, "Urgent");
                 req2.setStatus("Pending"); req2.setRequestDate(LocalDate.now().minusDays(1));
                 bloodRequestRepository.save(req2);
 
-                // Lilavati Mumbai — Routine B+
+                // Lilavati Mumbai - Routine B+
                 BloodRequest req3 = BloodRequestFactory.createRequest(h3, "B+", 12.0, "Routine");
                 req3.setStatus("Pending"); req3.setRequestDate(LocalDate.now().minusDays(2));
                 bloodRequestRepository.save(req3);
 
-                // Fortis Bengaluru — Critical AB-
+                // Fortis Bengaluru - Critical AB-
                 BloodRequest req4 = BloodRequestFactory.createRequest(h4, "AB-", 2.0, "Critical");
                 req4.setStatus("Pending"); req4.setRequestDate(LocalDate.now());
                 bloodRequestRepository.save(req4);
 
-                // KIMS Hyderabad — Urgent O+
+                // KIMS Hyderabad - Urgent O+
                 BloodRequest req5 = BloodRequestFactory.createRequest(h5, "O+", 15.0, "Urgent");
                 req5.setStatus("Pending"); req5.setRequestDate(LocalDate.now().minusDays(1));
                 bloodRequestRepository.save(req5);
 
-                // Apollo Hyderabad — already fulfilled B-
+                // Apollo Hyderabad - already fulfilled B-
                 BloodRequest req6 = BloodRequestFactory.createRequest(h2, "B-", 4.0, "Routine");
                 req6.setStatus("Fulfilled"); req6.setRequestDate(LocalDate.now().minusDays(5));
                 bloodRequestRepository.save(req6);
 
-                // Manipal Bengaluru — already fulfilled A+
+                // Manipal Bengaluru - already fulfilled A+
                 BloodRequest req7 = BloodRequestFactory.createRequest(h1, "A+", 5.0, "Urgent");
                 req7.setStatus("Fulfilled"); req7.setRequestDate(LocalDate.now().minusDays(3));
                 bloodRequestRepository.save(req7);
 
-                // Lilavati Mumbai — Critical O-
+                // Lilavati Mumbai - Critical O-
                 BloodRequest req8 = BloodRequestFactory.createRequest(h3, "O-", 1.0, "Critical");
                 req8.setStatus("Pending"); req8.setRequestDate(LocalDate.now());
                 bloodRequestRepository.save(req8);
