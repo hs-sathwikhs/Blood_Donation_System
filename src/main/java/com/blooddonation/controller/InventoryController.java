@@ -108,10 +108,11 @@ public class InventoryController {
     @PostMapping("/stock/add")
     public ResponseEntity<?> addStock(@RequestBody Map<String, String> payload) {
         try {
+            com.blooddonation.util.ValidationUtils.quantity(payload, 1, 1000);
             var inventory = inventoryService.getDefaultInventory();
             BloodStock stock = new BloodStock();
-            stock.setBloodType(payload.get("bloodType"));
-            stock.setQuantity(Double.parseDouble(payload.get("quantity")));
+            stock.setBloodType(com.blooddonation.util.ValidationUtils.bloodType(payload));
+            stock.setQuantity(com.blooddonation.util.ValidationUtils.quantity(payload, 0, 1000));
             stock.setDateAdded(java.time.LocalDate.now());
             stock.setExpiryDate(java.time.LocalDate.now().plusDays(42));
             stock.setInventory(inventory);
@@ -119,8 +120,8 @@ public class InventoryController {
             stock.setLowStockThreshold(10.0);
             bloodStockRepository.save(stock);
             return ResponseEntity.ok(Map.of("message", "Added " + payload.get("quantity") + " units of " + payload.get("bloodType")));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            throw ex;
         }
     }
 
@@ -128,7 +129,7 @@ public class InventoryController {
     public ResponseEntity<?> updateStock(@PathVariable java.util.UUID stockId, @RequestBody Map<String, String> payload) {
         BloodStock stock = bloodStockRepository.findById(stockId)
                 .orElseThrow(() -> new RuntimeException("Stock not found"));
-        stock.setQuantity(Double.parseDouble(payload.get("quantity")));
+        stock.setQuantity(com.blooddonation.util.ValidationUtils.quantity(payload, 0, 1000));
         bloodStockRepository.save(stock);
         return ResponseEntity.ok(Map.of("message", "Stock updated to " + payload.get("quantity") + " units"));
     }

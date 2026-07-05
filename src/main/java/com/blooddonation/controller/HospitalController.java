@@ -22,6 +22,9 @@ public class HospitalController {
     private HospitalService hospitalService;
 
     @Autowired
+    private com.blooddonation.security.Access access;
+
+    @Autowired
     private HospitalRepository hospitalRepository;
 
     @Autowired
@@ -32,8 +35,9 @@ public class HospitalController {
             @PathVariable java.util.UUID hospitalId,
             @RequestBody Map<String, String> payload) {
 
-        String bloodType = payload.get("bloodType");
-        double quantity = Double.parseDouble(payload.get("quantity"));
+        access.owner(hospitalId);
+        String bloodType = com.blooddonation.util.ValidationUtils.bloodType(payload);
+        double quantity = com.blooddonation.util.ValidationUtils.quantity(payload, 1, 1000);
         String severity = payload.get("severity");
 
         BloodRequest req = hospitalService.createBloodRequest(hospitalId, bloodType, quantity, severity);
@@ -51,7 +55,7 @@ public class HospitalController {
 
     @GetMapping("/{hospitalId}/requests")
     public ResponseEntity<List<Map<String, Object>>> getRequests(@PathVariable java.util.UUID hospitalId) {
-        // Use repository query directly to avoid lazy-loading issues
+        access.owner(hospitalId);
         List<BloodRequest> requests = bloodRequestRepository.findAll().stream()
                 .filter(r -> r.getHospital().getHospitalId().equals(hospitalId))
                 .collect(Collectors.toList());

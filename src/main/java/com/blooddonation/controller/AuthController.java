@@ -2,146 +2,89 @@ package com.blooddonation.controller;
 
 import com.blooddonation.model.*;
 import com.blooddonation.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import com.blooddonation.security.JwtUtils;
+import com.blooddonation.util.ValidationUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDate;
 import java.util.Map;
-import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+    private final OrganiserRepository organiserRepo;
+    private final DonatorRepository donorRepo;
+    private final HospitalRepository hospitalRepo;
+    private final AdminRepository adminRepo;
+    private final PasswordEncoder encoder;
+    private final JwtUtils jwtUtils;
 
-    @Autowired
-    private OrganiserRepository organiserRepo;
-
-    @Autowired
-    private DonatorRepository donatorRepo;
-
-    @Autowired
-    private HospitalRepository hospitalRepo;
-
-    @Autowired
-    private AdminRepository adminRepo;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private com.blooddonation.security.JwtUtils jwtUtils;
-
-    // ─── LOGIN ENDPOINTS ───
-
-    @PostMapping("/login/organiser")
-    public ResponseEntity<?> loginOrganiser(@RequestBody Map<String, String> credentials) {
-        String email = credentials.get("email");
-        String pswd = credentials.get("password");
-        Optional<Organiser> opt = organiserRepo.findByEmail(email);
-        if (opt.isPresent() && passwordEncoder.matches(pswd, opt.get().getPassword())) {
-            String token = jwtUtils.generateToken(email, "ROLE_ORGANISER");
-            return ResponseEntity.ok(Map.of("token", token, "id", opt.get().getOrganiserId(), "name", opt.get().getName()));
-        }
-        return ResponseEntity.status(401).body(Map.of("message", "Invalid credentials"));
+    public AuthController(OrganiserRepository organiserRepo, DonatorRepository donorRepo,
+            HospitalRepository hospitalRepo, AdminRepository adminRepo, PasswordEncoder encoder, JwtUtils jwtUtils) {
+        this.organiserRepo = organiserRepo;
+        this.donorRepo = donorRepo;
+        this.hospitalRepo = hospitalRepo;
+        this.adminRepo = adminRepo;
+        this.encoder = encoder;
+        this.jwtUtils = jwtUtils;
     }
 
-    @PostMapping("/login/donor")
-    public ResponseEntity<?> loginDonor(@RequestBody Map<String, String> credentials) {
-        String email = credentials.get("email");
-        String pswd = credentials.get("password");
-        Optional<Donator> opt = donatorRepo.findByEmail(email);
-        if (opt.isPresent() && passwordEncoder.matches(pswd, opt.get().getPassword())) {
-            String token = jwtUtils.generateToken(email, "ROLE_DONOR");
-            return ResponseEntity.ok(Map.of("token", token, "id", opt.get().getDonatorId(), "name", opt.get().getName()));
+    @PostMapping("/login/{role}")
+    public ResponseEntity<?> login(@PathVariable String role, @RequestBody Map<String, String> data) {
+        String email = ValidationUtils.email(data);
+        String password = ValidationUtils.password(data, false);
+        User usr = switch (role) {
+            case "donor" -> donorRepo.findByEmail(email).orElse(null);
+            case "organiser" -> organiserRepo.findByEmail(email).orElse(null);
+            case "hospital" -> hospitalRepo.findByEmail(email).orElse(null);
+            case "admin" -> adminRepo.findByEmail(email).orElse(null);
+            default -> throw new IllegalArgumentException("Choose a valid role");
+        };
+        if (usr == null || !encoder.matches(password, usr.getPassword())) {
+            return ResponseEntity.status(401).body(Map.of("message", "Email or password is incorrect"));
         }
-        return ResponseEntity.status(401).body(Map.of("message", "Invalid credentials"));
+        UUID id = usr instanceof Donator d ? d.getDonatorId() : usr instanceof Organiser o ? o.getOrganiserId()
+                : usr instanceof Hospital h ? h.getHospitalId() : ((Admin) usr).getAdminId();
+        String token = jwtUtils.generateToken(id.toString(), "ROLE_" + role.toUpperCase(java.util.Locale.ROOT));
+        return ResponseEntity.ok(Map.of("token", token, "id", id, "name", usr.getName(), "role", role));
     }
 
-    @PostMapping("/login/hospital")
-    public ResponseEntity<?> loginHospital(@RequestBody Map<String, String> credentials) {
-        String email = credentials.get("email");
-        String pswd = credentials.get("password");
-        Optional<Hospital> opt = hospitalRepo.findByEmail(email);
-        if (opt.isPresent() && passwordEncoder.matches(pswd, opt.get().getPassword())) {
-            String token = jwtUtils.generateToken(email, "ROLE_HOSPITAL");
-            return ResponseEntity.ok(Map.of("token", token, "id", opt.get().getHospitalId(), "name", opt.get().getName()));
+    @PostMapping("/register/{role}")
+    public ResponseEntity<?> register(@PathVariable String role, @RequestBody Map<String, String> data) {
+        String email = ValidationUtils.email(data);
+        String name = ValidationUtils.text(data, "name", 100);
+        String password = ValidationUtils.password(data, true);
+        String contact = data.getOrDefault("contact", "").trim();
+        if (!contact.matches("[+0-9 ()-]{0,15}")) throw new IllegalArgumentException("Enter a valid contact number");
+        if (donorRepo.findByEmail(email).isPresent() || organiserRepo.findByEmail(email).isPresent()
+                || hospitalRepo.findByEmail(email).isPresent() || adminRepo.findByEmail(email).isPresent()) {
+            throw new IllegalArgumentException("Email already registered");
         }
-        return ResponseEntity.status(401).body(Map.of("message", "Invalid credentials"));
-    }
-
-    @PostMapping("/login/admin")
-    public ResponseEntity<?> loginAdmin(@RequestBody Map<String, String> credentials) {
-        String email = credentials.get("email");
-        String pswd = credentials.get("password");
-        Optional<Admin> opt = adminRepo.findByEmail(email);
-        if (opt.isPresent() && passwordEncoder.matches(pswd, opt.get().getPassword())) {
-            String token = jwtUtils.generateToken(email, "ROLE_ADMIN");
-            return ResponseEntity.ok(Map.of("token", token, "id", opt.get().getAdminId(), "name", opt.get().getName()));
-        }
-        return ResponseEntity.status(401).body(Map.of("message", "Invalid credentials"));
-    }
-
-    // ─── REGISTRATION ENDPOINTS ───
-
-    @PostMapping("/register/donor")
-    public ResponseEntity<?> registerDonor(@RequestBody Map<String, String> payload) {
-        try {
-            if (donatorRepo.findByEmail(payload.get("email")).isPresent()) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Email already registered"));
+        User usr;
+        switch (role) {
+            case "donor" -> {
+                Donator donor = new Donator();
+                int age = Integer.parseInt(ValidationUtils.text(data, "age", 3));
+                if (age < 18 || age > 65) throw new IllegalArgumentException("Donors must be between 18 and 65");
+                donor.setAge(age); donor.setBloodType(ValidationUtils.bloodType(data));
+                donor.setContact(contact); usr = donor;
             }
-            Donator d = new Donator();
-            d.setName(payload.get("name"));
-            d.setAge(Integer.parseInt(payload.get("age")));
-            d.setBloodType(payload.get("bloodType"));
-            d.setEmail(payload.get("email"));
-            d.setPassword(passwordEncoder.encode(payload.get("password")));
-            d.setContact(payload.getOrDefault("contact", ""));
-            d.setEligible(true);
-            donatorRepo.save(d);
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "Donor registered successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
-    }
-
-    @PostMapping("/register/hospital")
-    public ResponseEntity<?> registerHospital(@RequestBody Map<String, String> payload) {
-        try {
-            if (hospitalRepo.findByEmail(payload.get("email")).isPresent()) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Email already registered"));
+            case "organiser" -> {
+                Organiser org = new Organiser(); org.setContact(contact); usr = org;
             }
-            Hospital h = new Hospital();
-            h.setName(payload.get("name"));
-            h.setLocation(payload.get("location"));
-            h.setRegistrationNo(payload.get("registrationNo"));
-            h.setEmail(payload.get("email"));
-            h.setPassword(passwordEncoder.encode(payload.get("password")));
-            h.setContact(payload.getOrDefault("contact", ""));
-            hospitalRepo.save(h);
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "Hospital registered successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
-    }
-
-    @PostMapping("/register/organiser")
-    public ResponseEntity<?> registerOrganiser(@RequestBody Map<String, String> payload) {
-        try {
-            if (organiserRepo.findByEmail(payload.get("email")).isPresent()) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Email already registered"));
+            case "hospital" -> {
+                Hospital hospital = new Hospital();
+                hospital.setLocation(ValidationUtils.text(data, "location", 200));
+                hospital.setRegistrationNo(ValidationUtils.text(data, "registrationNo", 50));
+                hospital.setContact(contact); usr = hospital;
             }
-            Organiser o = new Organiser();
-            o.setName(payload.get("name"));
-            o.setEmail(payload.get("email"));
-            o.setPassword(passwordEncoder.encode(payload.get("password")));
-            o.setContact(payload.getOrDefault("contact", ""));
-            organiserRepo.save(o);
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "Organiser registered successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+            default -> throw new IllegalArgumentException("Choose a valid role");
         }
+        usr.setName(name); usr.setEmail(email); usr.setPassword(encoder.encode(password));
+        if (usr instanceof Donator d) donorRepo.save(d);
+        else if (usr instanceof Organiser o) organiserRepo.save(o);
+        else hospitalRepo.save((Hospital) usr);
+        return ResponseEntity.status(201).body(Map.of("message", "Account created. You can sign in now"));
     }
 }

@@ -22,6 +22,12 @@ public class CampController {
     @Autowired
     private CampService campService;
 
+    @Autowired
+    private com.blooddonation.security.Access access;
+
+    @Autowired
+    private com.blooddonation.repository.OrganiserRepository organiserRepo;
+
     @PostMapping
     public ResponseEntity<CampDTO> createCamp(@jakarta.validation.Valid @RequestBody CampDTO campDTO) {
         Camp camp = new Camp();
@@ -30,6 +36,7 @@ public class CampController {
         camp.setDate(campDTO.getDate());
         camp.setTime(campDTO.getTime());
         camp.setCapacity(campDTO.getCapacity());
+        camp.setOrganiser(organiserRepo.findById(access.userId()).orElseThrow());
 
         Camp savedCamp = campService.createCamp(camp);
 
@@ -54,18 +61,21 @@ public class CampController {
     @PutMapping("/{id}")
     public ResponseEntity<CampDTO> updateCamp(@PathVariable java.util.UUID id,
                                                @jakarta.validation.Valid @RequestBody CampDTO campDTO) {
+        access.camp(id);
         Camp updated = campService.updateCamp(id, campDTO);
         return ResponseEntity.ok(toDTO(updated));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> cancelCamp(@PathVariable java.util.UUID id) {
+        access.camp(id);
         campService.cancelCamp(id);
         return ResponseEntity.ok(Map.of("message", "Camp cancelled successfully"));
     }
 
     @PostMapping("/{id}/publish")
     public ResponseEntity<CampDTO> publishCamp(@PathVariable java.util.UUID id) {
+        access.camp(id);
         Camp camp = campService.publishCamp(id);
         return ResponseEntity.ok(toDTO(camp));
     }
@@ -73,6 +83,7 @@ public class CampController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<?> changeStatus(@PathVariable java.util.UUID id,
                                            @RequestBody Map<String, String> payload) {
+        access.camp(id);
         String newStatus = payload.get("status");
         Camp camp = campService.changeStatus(id, newStatus);
         return ResponseEntity.ok(toDTO(camp));
@@ -80,6 +91,7 @@ public class CampController {
 
     @GetMapping("/{id}/registrations")
     public ResponseEntity<List<Map<String, Object>>> getCampRegistrations(@PathVariable java.util.UUID id) {
+        access.camp(id);
         List<Registration> registrations = campService.getCampRegistrations(id);
         List<Map<String, Object>> result = registrations.stream().map(r -> Map.<String, Object>of(
                 "registrationId", r.getRegistrationId(),

@@ -22,6 +22,9 @@ public class DonatorController {
     private DonatorService donatorService;
 
     @Autowired
+    private com.blooddonation.security.Access access;
+
+    @Autowired
     private DonatorRepository donatorRepository;
 
     @Autowired
@@ -29,7 +32,7 @@ public class DonatorController {
 
     @GetMapping("/{id}/donations")
     public ResponseEntity<List<Map<String, Object>>> getDonationHistory(@PathVariable java.util.UUID id) {
-        // Use DonationRepository directly to avoid lazy-loading serialization issues
+        access.owner(id);
         List<Donation> donations = donationRepository.findAll().stream()
                 .filter(d -> d.getDonor().getDonatorId().equals(id))
                 .collect(Collectors.toList());
@@ -47,6 +50,7 @@ public class DonatorController {
 
     @GetMapping("/{id}/eligibility")
     public ResponseEntity<Boolean> checkEligibility(@PathVariable java.util.UUID id) {
+        access.owner(id);
         boolean eligible = donatorService.checkEligibility(id);
         return ResponseEntity.ok(eligible);
     }
@@ -55,11 +59,14 @@ public class DonatorController {
     public ResponseEntity<String> registerForCamp(@RequestBody Map<String, String> payload) {
         try {
             java.util.UUID donorId = java.util.UUID.fromString(payload.get("donorId"));
+            access.owner(donorId);
             java.util.UUID campId = java.util.UUID.fromString(payload.get("campId"));
             Registration reg = donatorService.registerForCamp(donorId, campId);
             return ResponseEntity.ok("Successfully registered with ID: " + reg.getRegistrationId());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (org.springframework.security.access.AccessDeniedException ex) {
+            throw ex;
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            throw ex;
         }
     }
 
@@ -67,12 +74,15 @@ public class DonatorController {
     public ResponseEntity<String> recordDonation(@RequestBody Map<String, String> payload) {
         try {
             java.util.UUID donorId = java.util.UUID.fromString(payload.get("donorId"));
+            access.owner(donorId);
             java.util.UUID campId = java.util.UUID.fromString(payload.get("campId"));
-            double quantity = Double.parseDouble(payload.get("quantity"));
+            double quantity = com.blooddonation.util.ValidationUtils.quantity(payload, 0.5, 1);
             Donation donation = donatorService.recordDonation(donorId, campId, quantity);
             return ResponseEntity.ok("Donation recorded: " + donation.getDonationId());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (org.springframework.security.access.AccessDeniedException ex) {
+            throw ex;
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            throw ex;
         }
     }
 }

@@ -12,9 +12,11 @@ public class CampDTO {
     private java.util.UUID campId;
     
     @NotBlank(message = "Name cannot be empty")
+    @jakarta.validation.constraints.Size(max = 100)
     private String name;
     
     @NotBlank(message = "Location cannot be empty")
+    @jakarta.validation.constraints.Size(max = 200)
     private String location;
     
     @NotNull(message = "Date is required")

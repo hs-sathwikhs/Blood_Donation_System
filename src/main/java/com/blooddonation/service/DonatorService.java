@@ -31,16 +31,6 @@ public class DonatorService {
     // EligibilityCriteria from class diagram - encapsulates validation rules
     private final EligibilityCriteria eligibilityCriteria = new EligibilityCriteria();
 
-    public Donator registerDonator(Donator donator) {
-        if (!ValidationUtils.isValidEmail(donator.getEmail())) {
-            throw new IllegalArgumentException("Invalid email format");
-        }
-        if (!eligibilityCriteria.validateDonor(donator)) {
-            donator.setEligible(false);
-        }
-        return donatorRepository.save(donator);
-    }
-
     public boolean checkEligibility(java.util.UUID donorId) {
         Donator donator = donatorRepository.findById(donorId)
             .orElseThrow(() -> new RuntimeException("Donor not found"));
