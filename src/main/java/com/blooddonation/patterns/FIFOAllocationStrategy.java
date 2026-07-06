@@ -11,6 +11,6 @@ public class FIFOAllocationStrategy implements AllocationStrategy {
     @Override
     public List<BloodStock> allocate(String bloodType, LocalDate currentDate, BloodStockRepository repository) {
         // Allocate oldest stock first (sorted by dateAdded)
-        return repository.findByBloodTypeAndExpiryDateAfterOrderByDateAddedAsc(bloodType, currentDate);
+        return repository.findByBloodTypeAndExpiryDateGreaterThanEqualOrderByDateAddedAsc(bloodType, currentDate);
     }
 }

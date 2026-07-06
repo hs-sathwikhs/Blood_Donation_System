@@ -30,13 +30,12 @@ public class InventoryService {
 
     @Autowired
     private BloodRequestRepository bloodRequestRepository;
-    
+
     @Autowired
     private InventoryManager inventoryManager;
 
     @PostConstruct
     public void init() {
-        // Ensure default inventory exists for simplicity in this demo
         if (inventoryRepository.count() == 0) {
             Inventory inv = new Inventory();
             inv.setLocation("Central Blood Bank");
@@ -46,7 +45,7 @@ public class InventoryService {
 
     public void addDonationToInventory(Donation donation) {
         Inventory inv = inventoryRepository.findAll().get(0);
-        
+
         BloodStock stock = new BloodStock();
         stock.setInventory(inv);
         stock.setBloodType(donation.getBloodType());
@@ -54,23 +53,27 @@ public class InventoryService {
         stock.setDateAdded(LocalDate.now());
         stock.setExpiryDate(LocalDate.now().plusDays(42));
         stock.setLowStockThreshold(10.0);
-        
-        // Use singleton pattern method
+        stock.setRare(java.util.Set.of("O-", "AB-", "B-").contains(donation.getBloodType()));
+
         inventoryManager.addStock(stock);
     }
-    
+
     public boolean fulfillRequest(java.util.UUID requestId, AllocationStrategy strategy) {
-        BloodRequest request = bloodRequestRepository.findById(requestId)
-            .orElseThrow(() -> new RuntimeException("Request not found"));
-            
+        BloodRequest request = bloodRequestRepository.lockById(requestId)
+            .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Request not found"));
+
+        if (!"Pending".equals(request.getStatus())) throw new IllegalStateException("This request has already been processed");
         List<BloodStock> availableStocks = inventoryManager.getAvailableStock(request.getBloodType(), strategy);
-        
+
         double requestedAmt = request.getQuantity();
+        if (availableStocks.stream().mapToDouble(BloodStock::getQuantity).sum() < requestedAmt) {
+            throw new IllegalStateException("Insufficient usable stock");
+        }
         double fulfilledAmt = 0;
-        
+
         for (BloodStock stock : availableStocks) {
             if (fulfilledAmt >= requestedAmt) break;
-            
+
             double availableFromStock = stock.getQuantity();
             if (availableFromStock > 0) {
                 double toTake = Math.min(availableFromStock, requestedAmt - fulfilledAmt);
@@ -79,22 +82,20 @@ public class InventoryService {
                 fulfilledAmt += toTake;
             }
         }
-        
-        if (fulfilledAmt >= requestedAmt) {
-            request.setStatus("Fulfilled");
-            bloodRequestRepository.save(request);
-            return true;
-        } else {
-            // Not enough stock, rollback conceptually handled by not committing these partial takes as a failure
-            // Real implementation might rollback the transaction here.
-            throw new IllegalStateException("Insufficient stock to fulfill request");
-        }
+
+        request.setStatus("Fulfilled");
+        bloodRequestRepository.save(request);
+        return true;
     }
-    
-    public void checkLowStockAndAlert() {
-        // Simulated process that would run via @Scheduled daily
-        // We'd check bloodStockRepository for types where SUM(quantity) < threshold
-        System.out.println("Checking low stock alerts...");
+
+    public void updateStock(java.util.UUID id, double qty) {
+        BloodStock stock = bloodStockRepository.lockById(id).orElseThrow(() ->
+                new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Stock not found"));
+        stock.setQuantity(qty);
+    }
+
+    public long removeExpiredStock() {
+        return bloodStockRepository.deleteByExpiryDateBefore(LocalDate.now());
     }
 
     public Inventory getDefaultInventory() {

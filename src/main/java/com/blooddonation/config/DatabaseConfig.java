@@ -142,12 +142,12 @@ public class DatabaseConfig {
             if (campRepository.count() == 0) {
                 // Active camps
                 c1 = new Camp(); c1.setName("Indiranagar Blood Drive"); c1.setLocation("Bengaluru - Indiranagar");
-                c1.setDate(LocalDate.now().plusDays(5)); c1.setTime(LocalTime.of(9, 0));
+                c1.setDate(LocalDate.now()); c1.setTime(LocalTime.of(9, 0));
                 c1.setCapacity(60); c1.setStatus("Active"); c1.setOrganiser(org1);
                 c1 = campRepository.save(c1);
 
                 c2 = new Camp(); c2.setName("Jubilee Hills Health Camp"); c2.setLocation("Hyderabad - Jubilee Hills");
-                c2.setDate(LocalDate.now().plusDays(8)); c2.setTime(LocalTime.of(10, 0));
+                c2.setDate(LocalDate.now()); c2.setTime(LocalTime.of(10, 0));
                 c2.setCapacity(80); c2.setStatus("Active"); c2.setOrganiser(org2);
                 c2 = campRepository.save(c2);
 

@@ -32,10 +32,12 @@ public class InventoryController {
     @GetMapping("/stock")
     public ResponseEntity<Map<String, Double>> getAggregatedStock() {
         List<BloodStock> stocks = bloodStockRepository.findAll();
-        Map<String, Double> stockByBloodType = new HashMap<>();
+        Map<String, Double> stockByBloodType = new java.util.LinkedHashMap<>();
+        for (String type : java.util.List.of("O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-")) stockByBloodType.put(type, 0.0);
 
         for (BloodStock stock : stocks) {
-            stockByBloodType.merge(stock.getBloodType(), stock.getQuantity(), Double::sum);
+            if (!stock.getExpiryDate().isBefore(java.time.LocalDate.now()))
+                stockByBloodType.merge(stock.getBloodType(), stock.getQuantity(), Double::sum);
         }
 
         return ResponseEntity.ok(stockByBloodType);
@@ -44,7 +46,8 @@ public class InventoryController {
     @GetMapping("/requests/pending")
     public ResponseEntity<List<Map<String, Object>>> getPendingRequests() {
         List<BloodRequest> pending = bloodRequestRepository.findAll().stream()
-                .filter(r -> "Pending".equalsIgnoreCase(r.getStatus()) || "Created".equalsIgnoreCase(r.getStatus()))
+                .filter(r -> "Pending".equals(r.getStatus()))
+                .sorted(java.util.Comparator.comparingInt(BloodRequest::getPriority).thenComparing(BloodRequest::getRequestDate))
                 .collect(Collectors.toList());
 
         // Return as plain maps to avoid lazy-loading/serialization issues
@@ -68,25 +71,12 @@ public class InventoryController {
     @PostMapping("/fulfill/{requestId}")
     public ResponseEntity<?> fulfillRequest(@PathVariable java.util.UUID requestId,
                                                  @RequestParam(defaultValue = "fifo") String strategyType) {
-        try {
-            boolean success = false;
-            if ("priority".equalsIgnoreCase(strategyType)) {
-                success = inventoryService.fulfillRequest(requestId, new PriorityAllocationStrategy());
-            } else {
-                success = inventoryService.fulfillRequest(requestId, new FIFOAllocationStrategy());
-            }
-
-            if (success) {
-                return ResponseEntity.ok(Map.of("message", "Request Fulfilled Successfully", "status", 200));
-            } else {
-                return ResponseEntity.badRequest().body(Map.of("message", "Failed to fulfill request due to insufficient stock.", "error", "InsufficientStock"));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage(), "error", "Exception"));
-        }
+        if (!java.util.Set.of("fifo", "priority").contains(strategyType))
+            throw new IllegalArgumentException("Choose fifo or priority allocation");
+        inventoryService.fulfillRequest(requestId, "priority".equals(strategyType)
+                ? new PriorityAllocationStrategy() : new FIFOAllocationStrategy());
+        return ResponseEntity.ok(Map.of("message", "Request fulfilled"));
     }
-
-    // ─── Stock Management Panel Endpoints ───
 
     @GetMapping("/stock/detailed")
     public ResponseEntity<List<Map<String, Object>>> getDetailedStock() {
@@ -127,23 +117,13 @@ public class InventoryController {
 
     @PatchMapping("/stock/{stockId}")
     public ResponseEntity<?> updateStock(@PathVariable java.util.UUID stockId, @RequestBody Map<String, String> payload) {
-        BloodStock stock = bloodStockRepository.findById(stockId)
-                .orElseThrow(() -> new RuntimeException("Stock not found"));
-        stock.setQuantity(com.blooddonation.util.ValidationUtils.quantity(payload, 0, 1000));
-        bloodStockRepository.save(stock);
+        inventoryService.updateStock(stockId, com.blooddonation.util.ValidationUtils.quantity(payload, 0, 1000));
         return ResponseEntity.ok(Map.of("message", "Stock updated to " + payload.get("quantity") + " units"));
     }
 
     @DeleteMapping("/stock/expired")
     public ResponseEntity<?> removeExpiredStock() {
-        List<BloodStock> all = bloodStockRepository.findAll();
-        long removed = 0;
-        for (BloodStock s : all) {
-            if (s.getExpiryDate().isBefore(java.time.LocalDate.now())) {
-                bloodStockRepository.delete(s);
-                removed++;
-            }
-        }
+        long removed = inventoryService.removeExpiredStock();
         return ResponseEntity.ok(Map.of("message", "Removed " + removed + " expired stock entries"));
     }
 }

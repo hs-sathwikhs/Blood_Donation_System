@@ -10,7 +10,7 @@ import java.time.LocalDate;
 @DiscriminatorColumn(name = "severity", discriminatorType = DiscriminatorType.STRING)
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public abstract class BloodRequest {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "request_id")
@@ -34,9 +34,12 @@ public abstract class BloodRequest {
 
     @Column(nullable = false)
     protected int priority;
-    
+
     @Column(name = "severity", insertable = false, updatable = false)
     protected String severity;
+
+    @Version
+    private Long version;
 
     public abstract int getComputedPriority();
     public abstract String getProcessingMessage();

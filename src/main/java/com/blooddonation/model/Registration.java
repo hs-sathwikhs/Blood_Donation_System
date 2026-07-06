@@ -5,10 +5,10 @@ import lombok.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "registration")
+@Table(name = "registration", uniqueConstraints = @UniqueConstraint(columnNames = {"donor_id", "camp_id"}))
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Registration {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "registration_id")
