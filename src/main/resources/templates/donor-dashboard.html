@@ -31,6 +31,11 @@
             </div>
         </div>
 
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            <input id="campSearch" type="search" class="form-control" placeholder="Search name or location" aria-label="Search camps" oninput="renderCamps()">
+            <input id="campDate" type="date" class="form-control" aria-label="Camp date" onchange="renderCamps()">
+            <select id="campState" class="form-select" aria-label="Camp status" onchange="renderCamps()"><option value="">All states</option><option>Active</option><option>Scheduled</option><option>Completed</option><option>Cancelled</option></select>
+        </div>
         <table class="table table-striped table-hover shadow-sm rounded">
             <thead class="table-dark">
                 <tr>
@@ -38,13 +43,15 @@
                     <th>Location</th>
                     <th>Date</th>
                     <th>Status</th>
-                    <th>Action</th>
+                    <th>Places left</th><th>Action</th>
                 </tr>
             </thead>
             <tbody id="campTableBody">
             </tbody>
         </table>
     </div>
+
+    <section class="container mt-4"><h3>My registrations</h3><ul id="registrationList" class="list-group"></ul></section>
 
     <!-- History Modal -->
     <div class="modal fade" id="historyModal" tabindex="-1">
@@ -79,7 +86,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Units Donated (Pints)</label>
-                            <input type="number" class="form-control" id="quantityInput" value="1.0" step="0.5" min="0.5" max="2.0" required>
+                            <input type="number" class="form-control" id="quantityInput" value="1.0" step="0.5" min="0.5" max="1.0" required>
                         </div>
                         <button type="submit" class="btn btn-danger w-100">Submit Record</button>
                     </form>
@@ -99,34 +106,28 @@
         }
         document.getElementById('donorNameLabel').textContent = donorName || '';
 
-        // Load Camps
-        function loadCamps() {
-            fetch('/api/camps?size=100', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            })
-                .then(res => {
-                    if (!res.ok) throw new Error('Failed to load camps');
-                    return res.json();
-                })
-                .then(data => {
-                    const tbody = document.getElementById('campTableBody');
-                    const select = document.getElementById('campSelect');
-                    tbody.innerHTML = ''; select.innerHTML = '<option value="">Select Camp</option>';
-
-                    const camps = data.content || data;
-                    camps.forEach(camp => {
-                        tbody.innerHTML += `
-                            <tr>
-                                <td>${camp.name}</td>
-                                <td>${camp.location}</td>
-                                <td>${camp.date}</td>
-                                <td><span class="badge bg-success">${camp.status}</span></td>
-                                <td><button class="btn btn-sm btn-outline-danger" onclick="registerForCamp('${camp.campId}')"><i class="bi bi-file-earmark-person me-1"></i>Register for Camp</button></td>
-                            </tr>
-                        `;
-                        select.innerHTML += `<option value="${camp.campId}">${camp.name} (${camp.date})</option>`;
-                    });
-                }).catch(err => console.error(err));
+        let camps = [], registrations = [];
+        async function loadCamps() {
+            const headers = {Authorization: 'Bearer ' + token};
+            const [campRes, regRes] = await Promise.all([fetch('/api/camps?size=100', {headers}), fetch('/api/donors/' + currentDonorId + '/registrations', {headers})]);
+            camps = (await campRes.json()).content;
+            registrations = await regRes.json();
+            renderCamps();
+            document.getElementById('registrationList').innerHTML = registrations.map(r => `<li class="list-group-item">${r.name} - ${r.date}: ${r.status} ${r.status === 'Registered' && r.campStatus !== 'Completed' ? `<button class="btn btn-sm btn-outline-danger" onclick="cancelRegistration('${r.campId}')">Cancel</button>` : ''}</li>`).join('') || '<li class="list-group-item">No registrations yet.</li>';
+        }
+        function renderCamps() {
+            const query = document.getElementById('campSearch').value.toLowerCase();
+            const date = document.getElementById('campDate').value;
+            const state = document.getElementById('campState').value;
+            document.getElementById('campTableBody').innerHTML = camps.filter(c => (c.name + ' ' + c.location).toLowerCase().includes(query) && (!date || c.date === date) && (!state || c.status === state)).map(c => {
+                const reg = registrations.find(r => r.campId === c.campId && r.status !== 'Cancelled');
+                const open = ['Active', 'Scheduled'].includes(c.status) && c.date >= new Date().toLocaleDateString('en-CA') && c.remaining > 0;
+                return `<tr><td>${c.name}</td><td>${c.location}</td><td>${c.date}</td><td>${c.status}</td><td>${c.remaining}</td><td>${reg ? reg.status : open ? `<button class="btn btn-sm btn-outline-danger" onclick="registerForCamp('${c.campId}')">Register</button>` : 'Closed'}</td></tr>`;
+            }).join('') || '<tr><td colspan="6">No camps match.</td></tr>';
+            document.getElementById('campSelect').innerHTML = '<option value="">Select camp</option>' + camps.filter(c => c.status === 'Active' && c.date === new Date().toLocaleDateString('en-CA') && registrations.some(r => r.campId === c.campId && r.status === 'Registered')).map(c => `<option value="${c.campId}">${c.name}</option>`).join('');
+        }
+        function cancelRegistration(campId) {
+            fetch('/api/donors/' + currentDonorId + '/registrations/' + campId, {method:'DELETE', headers:{Authorization:'Bearer '+token}}).then(r => r.json()).then(d => {alert(d.message);loadCamps();});
         }
         loadCamps();
 
@@ -141,7 +142,7 @@
             }).then(res => {
                 if (!res.ok) throw new Error('Registration failed');
                 return res.text();
-            }).then(msg => alert(msg)).catch(err => alert(err.message));
+            }).then(msg => {alert(msg);loadCamps();}).catch(err => alert(err.message));
         }
 
         function handleDonate(event) {

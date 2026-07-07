@@ -98,7 +98,7 @@
         }
 
         function loadCamps() {
-            fetch('/api/camps?size=100', { headers: H }).then(r => r.json()).then(data => {
+            fetch('/api/camps?size=100&mine=true', { headers: H }).then(r => r.json()).then(data => {
                 const tb = document.getElementById('campTableBody'); tb.innerHTML = '';
                 (data.content || data).forEach(c => {
                     tb.innerHTML += `<tr>

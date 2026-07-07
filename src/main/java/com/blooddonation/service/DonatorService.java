@@ -72,6 +72,15 @@ public class DonatorService {
         return donationRepo.save(donation);
     }
 
+    public void cancelRegistration(UUID donorId, UUID campId) {
+        Camp camp = campRepo.lockById(campId).orElseThrow(() -> missing("Camp"));
+        Registration reg = regRepo.findByDonorDonatorIdAndCampCampId(donorId, campId)
+                .orElseThrow(() -> missing("Registration"));
+        if (!"Registered".equals(reg.getStatus()) || "Completed".equals(camp.getStatus())
+                || camp.getDate().isBefore(LocalDate.now())) throw new IllegalStateException("This registration cannot be cancelled");
+        reg.setStatus("Cancelled");
+    }
+
     private Donator donor(UUID id) {
         return donatorRepository.findById(id).orElseThrow(() -> missing("Donor"));
     }

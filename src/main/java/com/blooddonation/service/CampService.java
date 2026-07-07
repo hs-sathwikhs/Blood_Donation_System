@@ -98,7 +98,11 @@ public class CampService {
     }
 
     public Page<Camp> getAllCamps(Pageable pageable) {
-        return campRepository.findAll(pageable);
+        return campRepository.findByStatusNot("Draft", pageable);
+    }
+
+    public Page<Camp> getOwnCamps(java.util.UUID id, Pageable pageable) {
+        return campRepository.findByOrganiserOrganiserId(id, pageable);
     }
 
     public Camp getCampById(java.util.UUID id) {

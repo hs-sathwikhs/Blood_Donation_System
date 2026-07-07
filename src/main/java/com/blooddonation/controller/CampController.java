@@ -46,8 +46,11 @@ public class CampController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<CampDTO>> getAllCamps(Pageable pageable) {
-        Page<CampDTO> camps = campService.getAllCamps(pageable).map(this::toDTO);
+    public ResponseEntity<Page<CampDTO>> getAllCamps(Pageable pageable, @RequestParam(defaultValue = "false") boolean mine) {
+        if (mine && org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
+                .getAuthorities().stream().noneMatch(a -> "ROLE_ORGANISER".equals(a.getAuthority())))
+            throw new org.springframework.security.access.AccessDeniedException("Sign in as an organiser to view your camps");
+        Page<CampDTO> camps = (mine ? campService.getOwnCamps(access.userId(), pageable) : campService.getAllCamps(pageable)).map(this::toDTO);
         return ResponseEntity.ok(camps);
     }
 
@@ -112,6 +115,9 @@ public class CampController {
         dto.setTime(c.getTime());
         dto.setCapacity(c.getCapacity());
         dto.setStatus(c.getStatus());
+        long registered = c.getRegistrations().stream().filter(r -> !"Cancelled".equals(r.getStatus())).count();
+        dto.setRegistered(registered);
+        dto.setRemaining(Math.max(0, c.getCapacity() - registered));
         return dto;
     }
 }

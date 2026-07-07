@@ -30,6 +30,37 @@ public class DonatorController {
     @Autowired
     private DonationRepository donationRepository;
 
+    @Autowired
+    private com.blooddonation.repository.RegistrationRepository regRepo;
+
+    @GetMapping("/{id}/registrations")
+    public List<Map<String, Object>> getRegistrations(@PathVariable java.util.UUID id) {
+        access.owner(id);
+        return regRepo.findByDonorDonatorId(id).stream().map(r -> Map.<String, Object>of(
+                "campId", r.getCamp().getCampId(), "name", r.getCamp().getName(),
+                "location", r.getCamp().getLocation(), "date", r.getCamp().getDate(),
+                "campStatus", r.getCamp().getStatus(), "status", r.getStatus())).toList();
+    }
+
+    @DeleteMapping("/{id}/registrations/{campId}")
+    public Map<String, String> cancelRegistration(@PathVariable java.util.UUID id, @PathVariable java.util.UUID campId) {
+        access.owner(id);
+        donatorService.cancelRegistration(id, campId);
+        return Map.of("message", "Registration cancelled");
+    }
+
+    @GetMapping("/{id}")
+    public Map<String, Object> getProfile(@PathVariable java.util.UUID id) {
+        access.owner(id);
+        Donator d = donatorRepository.findById(id).orElseThrow();
+        var res = new java.util.LinkedHashMap<String, Object>();
+        res.put("name", d.getName()); res.put("bloodType", d.getBloodType());
+        res.put("eligible", donatorService.checkEligibility(id));
+        res.put("lastDonationDate", d.getLastDonationDate());
+        res.put("nextDonationDate", d.getLastDonationDate() == null ? java.time.LocalDate.now() : d.getLastDonationDate().plusDays(90));
+        return res;
+    }
+
     @GetMapping("/{id}/donations")
     public ResponseEntity<List<Map<String, Object>>> getDonationHistory(@PathVariable java.util.UUID id) {
         access.owner(id);

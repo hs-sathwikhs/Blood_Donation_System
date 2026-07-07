@@ -29,4 +29,6 @@ public class CampDTO {
     private int capacity;
     
     private String status;
+    private long registered;
+    private long remaining;
 }

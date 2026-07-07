@@ -70,6 +70,18 @@ class WorkflowTest {
     }
 
     @Test
+    void cancellingRegistrationReleasesItsPlace() {
+        Donator a = donor(); Donator b = donor(); Camp c = camp(1);
+        donors.registerForCamp(a.getDonatorId(), c.getCampId());
+        assertThrows(IllegalStateException.class, () -> donors.registerForCamp(b.getDonatorId(), c.getCampId()));
+        donors.cancelRegistration(a.getDonatorId(), c.getCampId());
+        donors.registerForCamp(b.getDonatorId(), c.getCampId());
+        assertEquals(1, regRepo.countByCampCampIdAndStatusNot(c.getCampId(), "Cancelled"));
+        camps.changeStatus(c.getCampId(), "Cancelled");
+        assertEquals("Cancelled", regRepo.findByDonorDonatorIdAndCampCampId(b.getDonatorId(), c.getCampId()).orElseThrow().getStatus());
+    }
+
+    @Test
     void concurrentRegistrationCannotOverbook() throws Exception {
         Camp c = camp(1); Donator a = donor(); Donator b = donor();
         var pool = Executors.newFixedThreadPool(2);
