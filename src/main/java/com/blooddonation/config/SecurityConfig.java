@@ -16,6 +16,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         http.csrf(csrf -> csrf.disable())
+                .headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives(
+                        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'")))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/organiser", "/donor", "/hospital", "/inventory", "/error").permitAll()
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/fonts/**", "/favicon.svg").permitAll()

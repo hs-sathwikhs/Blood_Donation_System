@@ -58,6 +58,8 @@ public class InventoryController {
 
             return Map.<String, Object>of(
                 "requestId", r.getRequestId().toString(),
+                "hospitalName", r.getHospital().getName(),
+                "requestDate", r.getRequestDate().toString(),
                 "bloodType", r.getBloodType(),
                 "quantity", r.getQuantity(),
                 "severity", severity,
