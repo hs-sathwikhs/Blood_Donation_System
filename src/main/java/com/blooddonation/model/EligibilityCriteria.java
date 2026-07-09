@@ -3,10 +3,6 @@ package com.blooddonation.model;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
-/**
- * EligibilityCriteria - validates donor eligibility based on configurable rules.
- * From Class Diagram: minAge, maxAge, minDaysSinceLastDonation, validateDonor()
- */
 public class EligibilityCriteria {
 
     private int minAge;
@@ -35,9 +31,4 @@ public class EligibilityCriteria {
         }
         return true;
     }
-
-    // Getters
-    public int getMinAge() { return minAge; }
-    public int getMaxAge() { return maxAge; }
-    public int getMinDaysSinceLastDonation() { return minDaysSinceLastDonation; }
 }

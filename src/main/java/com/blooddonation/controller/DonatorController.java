@@ -88,32 +88,20 @@ public class DonatorController {
 
     @PostMapping("/register-camp")
     public ResponseEntity<String> registerForCamp(@RequestBody Map<String, String> payload) {
-        try {
-            java.util.UUID donorId = java.util.UUID.fromString(payload.get("donorId"));
-            access.owner(donorId);
-            java.util.UUID campId = java.util.UUID.fromString(payload.get("campId"));
-            Registration reg = donatorService.registerForCamp(donorId, campId);
-            return ResponseEntity.ok("Successfully registered with ID: " + reg.getRegistrationId());
-        } catch (org.springframework.security.access.AccessDeniedException ex) {
-            throw ex;
-        } catch (IllegalArgumentException | IllegalStateException ex) {
-            throw ex;
-        }
+        java.util.UUID donorId = java.util.UUID.fromString(payload.get("donorId"));
+        access.owner(donorId);
+        java.util.UUID campId = java.util.UUID.fromString(payload.get("campId"));
+        Registration reg = donatorService.registerForCamp(donorId, campId);
+        return ResponseEntity.ok("Successfully registered with ID: " + reg.getRegistrationId());
     }
 
     @PostMapping("/donate")
     public ResponseEntity<String> recordDonation(@RequestBody Map<String, String> payload) {
-        try {
-            java.util.UUID donorId = java.util.UUID.fromString(payload.get("donorId"));
-            access.owner(donorId);
-            java.util.UUID campId = java.util.UUID.fromString(payload.get("campId"));
-            double quantity = com.blooddonation.util.ValidationUtils.quantity(payload, 0.5, 1);
-            Donation donation = donatorService.recordDonation(donorId, campId, quantity);
-            return ResponseEntity.ok("Donation recorded: " + donation.getDonationId());
-        } catch (org.springframework.security.access.AccessDeniedException ex) {
-            throw ex;
-        } catch (IllegalArgumentException | IllegalStateException ex) {
-            throw ex;
-        }
+        java.util.UUID donorId = java.util.UUID.fromString(payload.get("donorId"));
+        access.owner(donorId);
+        java.util.UUID campId = java.util.UUID.fromString(payload.get("campId"));
+        double quantity = com.blooddonation.util.ValidationUtils.quantity(payload, 0.5, 1);
+        Donation donation = donatorService.recordDonation(donorId, campId, quantity);
+        return ResponseEntity.ok("Donation recorded: " + donation.getDonationId());
     }
 }

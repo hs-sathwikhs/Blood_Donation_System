@@ -23,7 +23,7 @@ public class DonatorServiceTest {
     private DonatorService donatorService;
 
     @Test
-    public void testCheckEligibility_Underage_ReturnsFalse() {
+    public void underageDonorIsIneligible() {
         Donator d = new Donator();
         d.setAge(16);
         java.util.UUID id = java.util.UUID.randomUUID();

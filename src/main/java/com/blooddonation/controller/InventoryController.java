@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -50,7 +49,6 @@ public class InventoryController {
                 .sorted(java.util.Comparator.comparingInt(BloodRequest::getPriority).thenComparing(BloodRequest::getRequestDate))
                 .collect(Collectors.toList());
 
-        // Return as plain maps to avoid lazy-loading/serialization issues
         List<Map<String, Object>> result = pending.stream().map(r -> {
             String severity = "Routine";
             if (r instanceof com.blooddonation.model.CriticalBloodRequest) severity = "Critical";
@@ -99,22 +97,17 @@ public class InventoryController {
 
     @PostMapping("/stock/add")
     public ResponseEntity<?> addStock(@RequestBody Map<String, String> payload) {
-        try {
-            com.blooddonation.util.ValidationUtils.quantity(payload, 1, 1000);
-            var inventory = inventoryService.getDefaultInventory();
-            BloodStock stock = new BloodStock();
-            stock.setBloodType(com.blooddonation.util.ValidationUtils.bloodType(payload));
-            stock.setQuantity(com.blooddonation.util.ValidationUtils.quantity(payload, 0, 1000));
-            stock.setDateAdded(java.time.LocalDate.now());
-            stock.setExpiryDate(java.time.LocalDate.now().plusDays(42));
-            stock.setInventory(inventory);
-            stock.setRare("O-".equals(payload.get("bloodType")) || "AB-".equals(payload.get("bloodType")) || "B-".equals(payload.get("bloodType")));
-            stock.setLowStockThreshold(10.0);
-            bloodStockRepository.save(stock);
-            return ResponseEntity.ok(Map.of("message", "Added " + payload.get("quantity") + " units of " + payload.get("bloodType")));
-        } catch (IllegalArgumentException | IllegalStateException ex) {
-            throw ex;
-        }
+        var inventory = inventoryService.getDefaultInventory();
+        BloodStock stock = new BloodStock();
+        stock.setBloodType(com.blooddonation.util.ValidationUtils.bloodType(payload));
+        stock.setQuantity(com.blooddonation.util.ValidationUtils.quantity(payload, 1, 1000));
+        stock.setDateAdded(java.time.LocalDate.now());
+        stock.setExpiryDate(java.time.LocalDate.now().plusDays(42));
+        stock.setInventory(inventory);
+        stock.setRare("O-".equals(payload.get("bloodType")) || "AB-".equals(payload.get("bloodType")) || "B-".equals(payload.get("bloodType")));
+        stock.setLowStockThreshold(10.0);
+        bloodStockRepository.save(stock);
+        return ResponseEntity.ok(Map.of("message", "Added " + payload.get("quantity") + " units of " + payload.get("bloodType")));
     }
 
     @PatchMapping("/stock/{stockId}")

@@ -29,9 +29,6 @@ public class DatabaseConfig {
                                    org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
         return args -> {
 
-            // ─────────────────────────────────────────
-            //  ADMIN (Inventory Manager)
-            // ─────────────────────────────────────────
             if (adminRepo.count() == 0) {
                 Admin admin = new Admin();
                 admin.setName("Blood Bank Admin");
@@ -40,9 +37,6 @@ public class DatabaseConfig {
                 adminRepo.save(admin);
             }
 
-            // ─────────────────────────────────────────
-            //  ORGANISERS (2)
-            // ─────────────────────────────────────────
             Organiser org1 = null, org2 = null;
             if (organiserRepo.count() == 0) {
                 org1 = new Organiser();
@@ -64,9 +58,6 @@ public class DatabaseConfig {
                 if (orgs.size() > 1) org2 = orgs.get(1);
             }
 
-            // ─────────────────────────────────────────
-            //  DONORS (5)
-            // ─────────────────────────────────────────
             Donator d1 = null, d2 = null, d3 = null, d4 = null, d5 = null;
             if (donatorRepo.count() == 0) {
                 d1 = new Donator(); d1.setName("Aarav Patel"); d1.setAge(28); d1.setBloodType("O+");
@@ -97,9 +88,6 @@ public class DatabaseConfig {
                 d1 = donors.get(0);
             }
 
-            // ─────────────────────────────────────────
-            //  HOSPITALS (5 - across Indian cities)
-            // ─────────────────────────────────────────
             Hospital h1 = null, h2 = null, h3 = null, h4 = null, h5 = null;
             if (hospitalRepo.count() == 0) {
                 h1 = new Hospital(); h1.setName("Manipal Hospital"); h1.setLocation("Bengaluru");
@@ -135,12 +123,9 @@ public class DatabaseConfig {
                 if (hospitals.size() > 4) h5 = hospitals.get(4);
             }
 
-            // ─────────────────────────────────────────
-            //  CAMPS (6 - various states)
-            // ─────────────────────────────────────────
             Camp c1 = null, c2 = null, c3 = null;
             if (campRepository.count() == 0) {
-                // Active camps
+
                 c1 = new Camp(); c1.setName("Indiranagar Blood Drive"); c1.setLocation("Bengaluru - Indiranagar");
                 c1.setDate(LocalDate.now()); c1.setTime(LocalTime.of(9, 0));
                 c1.setCapacity(60); c1.setStatus("Active"); c1.setOrganiser(org1);
@@ -151,25 +136,21 @@ public class DatabaseConfig {
                 c2.setCapacity(80); c2.setStatus("Active"); c2.setOrganiser(org2);
                 c2 = campRepository.save(c2);
 
-                // Scheduled camp
                 c3 = new Camp(); c3.setName("Andheri Community Drive"); c3.setLocation("Mumbai - Andheri West");
                 c3.setDate(LocalDate.now().plusDays(15)); c3.setTime(LocalTime.of(8, 30));
                 c3.setCapacity(100); c3.setStatus("Scheduled"); c3.setOrganiser(org1);
                 c3 = campRepository.save(c3);
 
-                // Draft camp
                 Camp c4 = new Camp(); c4.setName("Koramangala Tech Park Drive"); c4.setLocation("Bengaluru - Koramangala");
                 c4.setDate(LocalDate.now().plusDays(20)); c4.setTime(LocalTime.of(11, 0));
                 c4.setCapacity(40); c4.setStatus("Draft"); c4.setOrganiser(org1);
                 campRepository.save(c4);
 
-                // Cancelled camp
                 Camp c5 = new Camp(); c5.setName("Banjara Hills Camp"); c5.setLocation("Hyderabad - Banjara Hills");
                 c5.setDate(LocalDate.now().plusDays(3)); c5.setTime(LocalTime.of(9, 30));
                 c5.setCapacity(50); c5.setStatus("Cancelled"); c5.setOrganiser(org2);
                 campRepository.save(c5);
 
-                // Completed camp
                 Camp c6 = new Camp(); c6.setName("Dadar Blood Donation Mela"); c6.setLocation("Mumbai - Dadar");
                 c6.setDate(LocalDate.now().minusDays(10)); c6.setTime(LocalTime.of(10, 0));
                 c6.setCapacity(70); c6.setStatus("Completed"); c6.setOrganiser(org2);
@@ -181,9 +162,6 @@ public class DatabaseConfig {
                 if (camps.size() > 2) c3 = camps.get(2);
             }
 
-            // ─────────────────────────────────────────
-            //  REGISTRATIONS (donors → camps)
-            // ─────────────────────────────────────────
             if (registrationRepository.count() == 0 && d1 != null && c1 != null) {
                 Registration r1 = new Registration(); r1.setDonor(d1); r1.setCamp(c1);
                 r1.setRegistrationDate(LocalDate.now().minusDays(2)); r1.setStatus("Registered");
@@ -206,9 +184,6 @@ public class DatabaseConfig {
                 }
             }
 
-            // ─────────────────────────────────────────
-            //  INVENTORY & BLOOD STOCK (all 8 types)
-            // ─────────────────────────────────────────
             Inventory inventory = inventoryRepo.findAll().isEmpty() ? null : inventoryRepo.findAll().get(0);
             if (inventory == null) {
                 inventory = new Inventory();
@@ -235,46 +210,36 @@ public class DatabaseConfig {
                 }
             }
 
-            // ─────────────────────────────────────────
-            //  BLOOD REQUESTS (varied hospitals, types, severities, statuses)
-            // ─────────────────────────────────────────
             if (bloodRequestRepository.count() == 0) {
-                // Manipal Bengaluru - Critical O-
+
                 BloodRequest req1 = BloodRequestFactory.createRequest(h1, "O-", 3.0, "Critical");
                 req1.setStatus("Pending"); req1.setRequestDate(LocalDate.now());
                 bloodRequestRepository.save(req1);
 
-                // Apollo Hyderabad - Urgent A+
                 BloodRequest req2 = BloodRequestFactory.createRequest(h2, "A+", 8.0, "Urgent");
                 req2.setStatus("Pending"); req2.setRequestDate(LocalDate.now().minusDays(1));
                 bloodRequestRepository.save(req2);
 
-                // Lilavati Mumbai - Routine B+
                 BloodRequest req3 = BloodRequestFactory.createRequest(h3, "B+", 12.0, "Routine");
                 req3.setStatus("Pending"); req3.setRequestDate(LocalDate.now().minusDays(2));
                 bloodRequestRepository.save(req3);
 
-                // Fortis Bengaluru - Critical AB-
                 BloodRequest req4 = BloodRequestFactory.createRequest(h4, "AB-", 2.0, "Critical");
                 req4.setStatus("Pending"); req4.setRequestDate(LocalDate.now());
                 bloodRequestRepository.save(req4);
 
-                // KIMS Hyderabad - Urgent O+
                 BloodRequest req5 = BloodRequestFactory.createRequest(h5, "O+", 15.0, "Urgent");
                 req5.setStatus("Pending"); req5.setRequestDate(LocalDate.now().minusDays(1));
                 bloodRequestRepository.save(req5);
 
-                // Apollo Hyderabad - already fulfilled B-
                 BloodRequest req6 = BloodRequestFactory.createRequest(h2, "B-", 4.0, "Routine");
                 req6.setStatus("Fulfilled"); req6.setRequestDate(LocalDate.now().minusDays(5));
                 bloodRequestRepository.save(req6);
 
-                // Manipal Bengaluru - already fulfilled A+
                 BloodRequest req7 = BloodRequestFactory.createRequest(h1, "A+", 5.0, "Urgent");
                 req7.setStatus("Fulfilled"); req7.setRequestDate(LocalDate.now().minusDays(3));
                 bloodRequestRepository.save(req7);
 
-                // Lilavati Mumbai - Critical O-
                 BloodRequest req8 = BloodRequestFactory.createRequest(h3, "O-", 1.0, "Critical");
                 req8.setStatus("Pending"); req8.setRequestDate(LocalDate.now());
                 bloodRequestRepository.save(req8);

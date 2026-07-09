@@ -42,5 +42,4 @@ public abstract class BloodRequest {
     private Long version;
 
     public abstract int getComputedPriority();
-    public abstract String getProcessingMessage();
 }

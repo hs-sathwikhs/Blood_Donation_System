@@ -21,14 +21,4 @@ public class Admin extends User {
 
     @Column(nullable = false)
     private String password;
-
-    @Override
-    public void login() {
-        System.out.println("Admin login logic");
-    }
-
-    @Override
-    public void logout() {
-        System.out.println("Admin logout logic");
-    }
 }

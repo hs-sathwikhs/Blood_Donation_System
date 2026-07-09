@@ -45,14 +45,4 @@ public class Donator extends User {
 
     @OneToMany(mappedBy = "donor", cascade = CascadeType.ALL)
     private List<Donation> donations = new ArrayList<>();
-
-    @Override
-    public void login() {
-        System.out.println("Donator login logic");
-    }
-
-    @Override
-    public void logout() {
-        System.out.println("Donator logout logic");
-    }
 }

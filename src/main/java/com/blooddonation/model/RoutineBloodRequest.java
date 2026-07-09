@@ -11,9 +11,4 @@ public class RoutineBloodRequest extends BloodRequest {
     public int getComputedPriority() {
         return 3;
     }
-
-    @Override
-    public String getProcessingMessage() {
-        return "ROUTINE: Process in standard time";
-    }
 }

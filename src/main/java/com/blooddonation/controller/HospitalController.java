@@ -4,7 +4,6 @@ import com.blooddonation.dto.BloodRequestDTO;
 import com.blooddonation.model.BloodRequest;
 import com.blooddonation.service.HospitalService;
 import com.blooddonation.repository.BloodRequestRepository;
-import com.blooddonation.repository.HospitalRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,9 +22,6 @@ public class HospitalController {
 
     @Autowired
     private com.blooddonation.security.Access access;
-
-    @Autowired
-    private HospitalRepository hospitalRepository;
 
     @Autowired
     private BloodRequestRepository bloodRequestRepository;
@@ -61,7 +57,6 @@ public class HospitalController {
                 .collect(Collectors.toList());
 
         List<Map<String, Object>> result = requests.stream().map(r -> {
-            // Determine severity from discriminator
             String severity = "Routine";
             if (r instanceof com.blooddonation.model.CriticalBloodRequest) severity = "Critical";
             else if (r instanceof com.blooddonation.model.UrgentBloodRequest) severity = "Urgent";

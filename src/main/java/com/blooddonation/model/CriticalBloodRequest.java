@@ -11,9 +11,4 @@ public class CriticalBloodRequest extends BloodRequest {
     public int getComputedPriority() {
         return 1;
     }
-
-    @Override
-    public String getProcessingMessage() {
-        return "CRITICAL: Immediate processing required";
-    }
 }

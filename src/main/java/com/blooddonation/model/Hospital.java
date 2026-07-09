@@ -35,14 +35,4 @@ public class Hospital extends User {
 
     @OneToMany(mappedBy = "hospital", cascade = CascadeType.ALL)
     private List<BloodRequest> bloodRequests = new ArrayList<>();
-
-    @Override
-    public void login() {
-        System.out.println("Hospital login logic");
-    }
-
-    @Override
-    public void logout() {
-        System.out.println("Hospital logout logic");
-    }
 }

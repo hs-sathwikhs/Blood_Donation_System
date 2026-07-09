@@ -11,9 +11,4 @@ public class UrgentBloodRequest extends BloodRequest {
     public int getComputedPriority() {
         return 2;
     }
-
-    @Override
-    public String getProcessingMessage() {
-        return "URGENT: Process within 24 hours";
-    }
 }

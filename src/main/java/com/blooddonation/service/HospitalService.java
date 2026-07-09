@@ -9,8 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @Transactional
 public class HospitalService {
@@ -30,11 +28,4 @@ public class HospitalService {
         return bloodRequestRepository.save(request);
     }
     
-    public List<BloodRequest> getRequestsForHospital(java.util.UUID hospitalId) {
-        Hospital hospital = hospitalRepository.findById(hospitalId).orElse(null);
-        if (hospital != null) {
-            return hospital.getBloodRequests();
-        }
-        return List.of();
-    }
 }

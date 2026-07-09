@@ -1,20 +1,10 @@
 package com.blooddonation.model;
 
 public abstract class User {
-    protected String name;
-    protected String email;
-    protected String password;
-
-    public abstract void login();
-    public abstract void logout();
-
-    // Getters and Setters
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
+    public abstract String getName();
+    public abstract String getEmail();
+    public abstract String getPassword();
+    public abstract void setName(String name);
+    public abstract void setEmail(String email);
+    public abstract void setPassword(String password);
 }

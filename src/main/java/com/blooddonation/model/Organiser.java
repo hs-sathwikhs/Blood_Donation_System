@@ -28,14 +28,4 @@ public class Organiser extends User {
 
     @OneToMany(mappedBy = "organiser", cascade = CascadeType.ALL)
     private List<Camp> camps;
-
-    @Override
-    public void login() {
-        System.out.println("Organiser login logic");
-    }
-
-    @Override
-    public void logout() {
-        System.out.println("Organiser logout logic");
-    }
 }

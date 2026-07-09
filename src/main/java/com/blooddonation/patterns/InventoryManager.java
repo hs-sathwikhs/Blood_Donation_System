@@ -14,14 +14,11 @@ public class InventoryManager {
     @Autowired
     private BloodStockRepository bloodStockRepository;
 
-
-
     public void addStock(BloodStock stock) {
         bloodStockRepository.save(stock);
     }
     
     public List<BloodStock> getAvailableStock(String bloodType, AllocationStrategy strategy) {
-        // Use strategy to fetch available stock appropriately
         return strategy.allocate(bloodType, LocalDate.now(), bloodStockRepository);
     }
 }

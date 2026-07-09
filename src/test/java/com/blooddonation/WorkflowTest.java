@@ -25,6 +25,7 @@ class WorkflowTest {
     @Autowired HospitalRepository hospitalRepo;
     @Autowired BloodRequestRepository requestRepo;
     @Autowired BloodStockRepository stockRepo;
+    @Autowired org.springframework.transaction.PlatformTransactionManager txManager;
 
     Donator donor() {
         Donator d = new Donator();
@@ -115,6 +116,23 @@ class WorkflowTest {
         assertEquals(10, stockRepo.findById(expired.getStockId()).orElseThrow().getQuantity());
         assertThrows(IllegalStateException.class, () -> inventory.fulfillRequest(req.getRequestId(), new FIFOAllocationStrategy()));
         assertEquals("Fulfilled", requestRepo.findById(req.getRequestId()).orElseThrow().getStatus());
+        assertEquals(1, inventory.removeExpiredStock());
+        assertTrue(stockRepo.findById(expired.getStockId()).isEmpty());
+        assertTrue(stockRepo.findById(usable.getStockId()).isPresent());
+    }
+
+    @Test
+    void allocationStrategiesChooseDifferentBatchOrders() {
+        BloodStock older = stock("AB-", 2, LocalDate.now().plusDays(20));
+        BloodStock sooner = stock("AB-", 2, LocalDate.now().plusDays(2));
+        sooner.setDateAdded(LocalDate.now()); stockRepo.save(sooner);
+        var fifo = new FIFOAllocationStrategy();
+        var priority = new PriorityAllocationStrategy();
+        var tx = new org.springframework.transaction.support.TransactionTemplate(txManager);
+        tx.executeWithoutResult(status -> {
+            assertEquals(older.getStockId(), fifo.allocate("AB-", LocalDate.now(), stockRepo).get(0).getStockId());
+            assertEquals(sooner.getStockId(), priority.allocate("AB-", LocalDate.now(), stockRepo).get(0).getStockId());
+        });
     }
 
     BloodStock stock(String type, double qty, LocalDate expiry) {
